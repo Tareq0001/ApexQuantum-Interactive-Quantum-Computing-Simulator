@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ApexQuantum | Interactive Quantum Computing Circuit & 3D Bloch Sphere Simulator</title>
-  <meta name="description" content="Next-Generation Interactive Quantum Computer and Circuit Simulator featuring a 3D WebGL Bloch Sphere, 4-qubit circuit composer, real-time complex state vector engine, quantum entanglement detection, and Monte Carlo measurement sampling.">
+  <meta name="description" content="Next-Generation Interactive Quantum Computer and Circuit Simulator featuring a 3D WebGL Bloch Sphere, 4-qubit circuit composer, real-time complex state vector engine, quantum entanglement detection, and Monte Carlo measurement sampling. Fully mobile-responsive.">
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
   <style>
     :root {
       --bg-dark: #06080f;
-      --panel-bg: rgba(11, 15, 25, 0.88);
+      --panel-bg: rgba(11, 15, 25, 0.92);
       --panel-border: rgba(0, 240, 255, 0.22);
       --panel-border-glow: rgba(0, 240, 255, 0.45);
       --cyan: #00f0ff;
@@ -38,6 +38,7 @@
       margin: 0;
       padding: 0;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -53,26 +54,27 @@
 
     /* Top Navigation / Header */
     .app-header {
-      height: 60px;
+      height: 56px;
       background: var(--panel-bg);
       backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--panel-border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 24px;
+      padding: 0 16px;
       z-index: 50;
+      flex-shrink: 0;
     }
 
     .brand-section {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
     }
 
     .brand-logo {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 10px;
       background: linear-gradient(135deg, #a855f7 0%, #00f0ff 100%);
       display: flex;
@@ -80,35 +82,34 @@
       justify-content: center;
       color: #050811;
       font-weight: 900;
-      font-size: 22px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+      font-size: 20px;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
     }
 
     .brand-title {
-      font-size: 19px;
+      font-size: 17px;
       font-weight: 800;
       letter-spacing: -0.5px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .brand-badge {
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       background: rgba(168, 85, 247, 0.15);
       color: #c084fc;
-      padding: 3px 8px;
-      border-radius: 6px;
+      padding: 2px 6px;
+      border-radius: 5px;
       border: 1px solid rgba(168, 85, 247, 0.35);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .header-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
     }
 
@@ -116,15 +117,15 @@
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-main);
-      padding: 7px 14px;
+      padding: 6px 12px;
       border-radius: 8px;
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.2s ease;
     }
 
@@ -132,7 +133,6 @@
       background: rgba(0, 240, 255, 0.12);
       border-color: var(--cyan);
       color: var(--cyan);
-      transform: translateY(-1px);
     }
 
     .btn-action.active {
@@ -143,12 +143,52 @@
       box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
     }
 
+    /* Mobile Bottom Navigation Tabs (Visible on Mobile <= 900px) */
+    .mobile-nav-tabs {
+      display: none;
+      height: 54px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--panel-border);
+      grid-template-columns: repeat(3, 1fr);
+      z-index: 60;
+      flex-shrink: 0;
+    }
+
+    .mobile-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mobile-tab-btn i {
+      font-size: 16px;
+    }
+
+    .mobile-tab-btn.active {
+      color: var(--cyan);
+      background: rgba(0, 240, 255, 0.08);
+      border-top: 2px solid var(--cyan);
+    }
+
     /* Main Workspace Layout */
     .workspace-grid {
       display: grid;
-      grid-template-columns: 360px 1fr 380px;
-      height: calc(100vh - 60px);
+      grid-template-columns: 350px 1fr 370px;
+      flex: 1;
+      height: calc(100vh - 56px);
       overflow: hidden;
+      position: relative;
     }
 
     /* Left Column: Bloch Sphere 3D View */
@@ -158,6 +198,7 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      height: 100%;
     }
 
     .bloch-canvas-container {
@@ -174,13 +215,14 @@
 
     .bloch-hud {
       position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
+      top: 14px;
+      left: 14px;
+      right: 14px;
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
+      z-index: 10;
     }
 
     .bloch-pill {
@@ -188,7 +230,7 @@
       background: rgba(11, 15, 25, 0.85);
       backdrop-filter: blur(10px);
       border: 1px solid var(--panel-border);
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 20px;
       font-family: var(--font-mono);
       font-size: 11px;
@@ -201,16 +243,17 @@
 
     .qubit-selector-bar {
       position: absolute;
-      bottom: 16px;
-      left: 16px;
-      right: 16px;
-      background: rgba(11, 15, 25, 0.85);
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      background: rgba(11, 15, 25, 0.9);
       backdrop-filter: blur(12px);
       border: 1px solid var(--panel-border);
       border-radius: 10px;
-      padding: 6px;
+      padding: 5px;
       display: flex;
       gap: 6px;
+      z-index: 10;
     }
 
     .btn-qselect {
@@ -246,46 +289,60 @@
       background: #080c14;
       border-right: 1px solid var(--panel-border);
       overflow-y: auto;
+      height: 100%;
     }
 
     .circuit-toolbar {
-      padding: 14px 20px;
+      padding: 12px 16px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(11, 15, 25, 0.5);
+      flex-shrink: 0;
+    }
+
+    .toolbar-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(11, 15, 25, 0.5);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
     .gate-toolbox {
       display: flex;
       gap: 8px;
       align-items: center;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .gate-badge {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: var(--font-mono);
       font-weight: 800;
-      font-size: 14px;
-      cursor: grab;
+      font-size: 13px;
+      cursor: pointer;
       transition: all 0.2s;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
 
-    .gate-badge:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(0, 240, 255, 0.3);
+    .gate-badge:hover, .gate-badge:active {
+      transform: scale(1.05);
     }
 
     .gate-badge.selected {
       outline: 2px solid #fff;
-      transform: scale(1.08);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
     }
 
     .gate-h { background: #00f0ff; color: #050811; }
@@ -298,25 +355,31 @@
     .gate-m { background: #64748b; color: #fff; }
 
     /* Circuit Board Wire Area */
+    .circuit-board-wrapper {
+      flex: 1;
+      padding: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .circuit-board {
-      padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      flex: 1;
+      gap: 16px;
+      min-width: 520px; /* Ensures all 8 slots stay comfortable */
     }
 
     .qubit-row {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       position: relative;
     }
 
     .qubit-label {
-      width: 60px;
+      width: 50px;
       font-family: var(--font-mono);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--cyan);
       display: flex;
@@ -326,11 +389,11 @@
 
     .qubit-wire {
       flex: 1;
-      height: 48px;
+      height: 44px;
       position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .wire-line {
@@ -344,11 +407,11 @@
     }
 
     .wire-slot {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 8px;
-      border: 1px dashed rgba(255, 255, 255, 0.15);
-      background: rgba(11, 15, 25, 0.6);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      background: rgba(11, 15, 25, 0.7);
       z-index: 2;
       display: flex;
       align-items: center;
@@ -357,9 +420,9 @@
       transition: all 0.2s;
     }
 
-    .wire-slot:hover {
+    .wire-slot:hover, .wire-slot:active {
       border-color: var(--cyan);
-      background: rgba(0, 240, 255, 0.08);
+      background: rgba(0, 240, 255, 0.1);
     }
 
     .wire-slot.filled {
@@ -368,19 +431,20 @@
 
     /* Algorithm Presets Section */
     .presets-container {
-      padding: 16px 24px;
+      padding: 14px 16px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
       background: rgba(11, 15, 25, 0.4);
+      flex-shrink: 0;
     }
 
     .section-title {
-      font-size: 12px;
+      font-size: 11px;
       font-family: var(--font-mono);
       font-weight: 700;
       color: var(--cyan);
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -389,33 +453,32 @@
     .presets-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
 
     .btn-preset {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 10px;
+      padding: 8px 10px;
       cursor: pointer;
       text-align: left;
       transition: all 0.2s;
     }
 
-    .btn-preset:hover {
+    .btn-preset:hover, .btn-preset:active {
       background: rgba(0, 240, 255, 0.08);
       border-color: var(--cyan);
-      transform: translateY(-1px);
     }
 
     .preset-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       color: #fff;
     }
 
     .preset-desc {
-      font-size: 10px;
+      font-size: 9px;
       color: var(--text-muted);
       margin-top: 2px;
     }
@@ -425,9 +488,10 @@
       background: rgba(8, 12, 20, 0.95);
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      padding: 20px;
+      gap: 14px;
+      padding: 16px;
       overflow-y: auto;
+      height: 100%;
     }
 
     .card {
@@ -435,17 +499,17 @@
       backdrop-filter: blur(14px);
       border: 1px solid var(--panel-border);
       border-radius: 12px;
-      padding: 14px;
+      padding: 12px 14px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 
     .state-bra-ket {
       font-family: var(--font-mono);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: #fff;
       background: rgba(0, 0, 0, 0.4);
-      padding: 10px;
+      padding: 8px 10px;
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.06);
       word-break: break-all;
@@ -456,9 +520,9 @@
     .state-bars-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-top: 10px;
-      max-height: 220px;
+      gap: 5px;
+      margin-top: 8px;
+      max-height: 200px;
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -479,7 +543,7 @@
 
     .bar-track {
       flex: 1;
-      height: 14px;
+      height: 13px;
       background: rgba(255, 255, 255, 0.05);
       border-radius: 4px;
       overflow: hidden;
@@ -493,7 +557,7 @@
     }
 
     .state-prob {
-      width: 44px;
+      width: 40px;
       text-align: right;
       color: #fff;
       font-weight: 700;
@@ -503,11 +567,11 @@
     .entanglement-pill {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 8px;
       background: rgba(168, 85, 247, 0.15);
       color: #c084fc;
@@ -519,10 +583,10 @@
     .histogram-box {
       display: flex;
       align-items: flex-end;
-      gap: 6px;
-      height: 100px;
-      margin-top: 10px;
-      padding-top: 10px;
+      gap: 4px;
+      height: 90px;
+      margin-top: 8px;
+      padding-top: 8px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
@@ -533,57 +597,115 @@
       align-items: center;
       height: 100%;
       justify-content: flex-end;
-      gap: 4px;
+      gap: 3px;
     }
 
     .hist-bar {
       width: 100%;
       background: linear-gradient(to top, #00f0ff, #a855f7);
-      border-radius: 4px 4px 0 0;
+      border-radius: 3px 3px 0 0;
       transition: height 0.4s ease;
       min-height: 2px;
     }
 
     .hist-lbl {
       font-family: var(--font-mono);
-      font-size: 9px;
+      font-size: 8px;
       color: var(--text-muted);
     }
 
     /* Toast Notification */
     .toast-banner {
       position: absolute;
-      top: 75px;
+      top: 66px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 240, 255, 0.2);
+      background: rgba(0, 240, 255, 0.22);
       backdrop-filter: blur(14px);
       border: 1px solid var(--cyan);
       color: #fff;
-      padding: 8px 20px;
+      padding: 7px 18px;
       border-radius: 30px;
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
       opacity: 0;
       pointer-events: none;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       z-index: 100;
+      max-width: 90%;
+      text-align: center;
     }
 
     .toast-banner.show {
       opacity: 1;
-      transform: translateX(-50%) translateY(6px);
+      transform: translateX(-50%) translateY(4px);
     }
 
-    /* Responsive */
-    @media (max-width: 1200px) {
+    /* ==========================================================
+       RESPONSIVE & MOBILE ADAPTIVE BREAKPOINTS
+       ========================================================== */
+    @media (max-width: 900px) {
+      .app-header {
+        height: 52px;
+        padding: 0 12px;
+      }
+      .brand-title {
+        font-size: 15px;
+      }
+      .brand-badge {
+        display: none;
+      }
+      .btn-action span {
+        display: none;
+      }
+      .btn-action {
+        padding: 6px 10px;
+      }
+
+      /* Enable mobile bottom tabs */
+      .mobile-nav-tabs {
+        display: grid;
+      }
+
       .workspace-grid {
-        grid-template-columns: 320px 1fr 320px;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 52px - 54px);
+      }
+
+      /* Switchable tabs on mobile */
+      .col-bloch, .col-circuit, .col-telemetry {
+        display: none;
+        width: 100%;
+        border-right: none;
+      }
+
+      .col-bloch.mobile-active,
+      .col-circuit.mobile-active,
+      .col-telemetry.mobile-active {
+        display: flex;
+        flex: 1;
+      }
+
+      .presets-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .qubit-selector-bar {
+        bottom: 8px;
+        left: 8px;
+        right: 8px;
+      }
+
+      .bloch-hud {
+        top: 8px;
+        left: 8px;
+        right: 8px;
       }
     }
   </style>
@@ -597,25 +719,25 @@
       <div>
         <div class="brand-title">
           ApexQuantum
-          <span class="brand-badge">Circuit & 3D Bloch Simulator</span>
+          <span class="brand-badge">Circuit & 3D Bloch</span>
         </div>
       </div>
     </div>
 
     <div class="header-actions">
-      <button class="btn-action active" id="btn-audio" onclick="toggleAudio()">
+      <button class="btn-action active" id="btn-audio" onclick="toggleAudio()" title="Toggle Quantum Audio">
         <i data-lucide="volume-2" id="audio-icon"></i>
-        <span>QUANTUM AUDIO</span>
+        <span>AUDIO</span>
       </button>
 
-      <button class="btn-action" onclick="resetCircuit()">
+      <button class="btn-action" onclick="resetCircuit()" title="Clear All Gates">
         <i data-lucide="rotate-ccw"></i>
-        <span>CLEAR CIRCUIT</span>
+        <span>CLEAR</span>
       </button>
 
-      <a href="https://github.com/Tareq0001/ApexQuantum-Interactive-Quantum-Computing-Simulator" target="_blank" class="btn-action" style="text-decoration: none;">
+      <a href="https://github.com/Tareq0001/ApexQuantum-Interactive-Quantum-Computing-Simulator" target="_blank" class="btn-action" style="text-decoration: none;" title="GitHub Source">
         <i data-lucide="github"></i>
-        <span>SOURCE</span>
+        <span>CODE</span>
       </a>
     </div>
   </header>
@@ -624,7 +746,7 @@
   <main class="workspace-grid">
 
     <!-- Column 1: 3D Bloch Sphere -->
-    <section class="col-bloch">
+    <section class="col-bloch" id="view-bloch">
       <div class="bloch-canvas-container">
         <div id="bloch-canvas"></div>
         <div class="bloch-hud">
@@ -632,7 +754,7 @@
             <i data-lucide="orbit"></i>
             <span id="bloch-qubit-lbl">Bloch Sphere: |ψ₀⟩</span>
           </div>
-          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px; align-self: flex-start;">
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; align-self: flex-start;">
             θ: <span id="bloch-theta" style="color: #fff;">0.00°</span> | φ: <span id="bloch-phi" style="color: #fff;">0.00°</span>
           </div>
         </div>
@@ -646,12 +768,13 @@
       </div>
     </section>
 
-    <!-- Column 2: Quantum Circuit Composer -->
-    <section class="col-circuit">
+    <!-- Column 2: Quantum Circuit Composer (Default Active on Mobile) -->
+    <section class="col-circuit mobile-active" id="view-circuit">
       <!-- Gate Selection Toolbar -->
       <div class="circuit-toolbar">
-        <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
-          SELECT GATE & CLICK WIRE:
+        <div class="toolbar-header">
+          <span>SELECT GATE & TAP WIRE:</span>
+          <span style="color: var(--cyan);">4 QUBITS • 8 STEPS</span>
         </div>
         <div class="gate-toolbox">
           <div class="gate-badge gate-h selected" onclick="selectTool('H')" title="Hadamard (Superposition)">H</div>
@@ -666,8 +789,10 @@
       </div>
 
       <!-- 4-Qubit Wires -->
-      <div class="circuit-board" id="circuit-board">
-        <!-- Rendered dynamically -->
+      <div class="circuit-board-wrapper">
+        <div class="circuit-board" id="circuit-board">
+          <!-- Rendered dynamically -->
+        </div>
       </div>
 
       <!-- Presets & Algorithms -->
@@ -678,34 +803,34 @@
         <div class="presets-grid">
           <button class="btn-preset" onclick="loadPreset('bell')">
             <div class="preset-title">Bell State (|Φ⁺⟩)</div>
-            <div class="preset-desc">Maximal 2-Qubit Entanglement</div>
+            <div class="preset-desc">Maximal Entanglement</div>
           </button>
           <button class="btn-preset" onclick="loadPreset('ghz')">
-            <div class="preset-title">GHZ State (3-Qubit)</div>
-            <div class="preset-desc">Tripartite Entanglement</div>
+            <div class="preset-title">GHZ State (3-Q)</div>
+            <div class="preset-desc">Tripartite Entangled</div>
           </button>
           <button class="btn-preset" onclick="loadPreset('teleport')">
-            <div class="preset-title">Quantum Teleportation</div>
-            <div class="preset-desc">State Transfer Protocol</div>
+            <div class="preset-title">Teleportation</div>
+            <div class="preset-desc">State Transfer</div>
           </button>
           <button class="btn-preset" onclick="loadPreset('grover')">
-            <div class="preset-title">Grover Search Step</div>
-            <div class="preset-desc">Amplitude Amplification</div>
+            <div class="preset-title">Grover Search</div>
+            <div class="preset-desc">Amplification</div>
           </button>
           <button class="btn-preset" onclick="loadPreset('superdense')">
-            <div class="preset-title">Superdense Coding</div>
-            <div class="preset-desc">2 Classical Bits via 1 Qubit</div>
+            <div class="preset-title">Superdense</div>
+            <div class="preset-desc">2 Bits / 1 Qubit</div>
           </button>
           <button class="btn-preset" onclick="loadPreset('qrng')">
-            <div class="preset-title">QRNG Random Gen</div>
-            <div class="preset-desc">True Quantum Entropy</div>
+            <div class="preset-title">QRNG Random</div>
+            <div class="preset-desc">Quantum Entropy</div>
           </button>
         </div>
       </div>
     </section>
 
     <!-- Column 3: State Vector Telemetry & Measurement -->
-    <aside class="col-telemetry">
+    <aside class="col-telemetry" id="view-telemetry">
       <!-- Dirac State Vector -->
       <div class="card">
         <div class="section-title">
@@ -749,6 +874,22 @@
 
   </main>
 
+  <!-- Mobile Bottom Tab Navigation -->
+  <nav class="mobile-nav-tabs">
+    <button class="mobile-tab-btn active" id="tab-btn-circuit" onclick="switchMobileTab('circuit')">
+      <i data-lucide="cpu"></i>
+      <span>CIRCUIT</span>
+    </button>
+    <button class="mobile-tab-btn" id="tab-btn-bloch" onclick="switchMobileTab('bloch')">
+      <i data-lucide="orbit"></i>
+      <span>3D BLOCH</span>
+    </button>
+    <button class="mobile-tab-btn" id="tab-btn-telemetry" onclick="switchMobileTab('telemetry')">
+      <i data-lucide="bar-chart-2"></i>
+      <span>RESULTS</span>
+    </button>
+  </nav>
+
   <!-- Notification Toast -->
   <div class="toast-banner" id="toast-banner">
     <i data-lucide="check-circle-2"></i>
@@ -759,8 +900,33 @@
     lucide.createIcons();
 
     /* ==========================================================
+       MOBILE TAB SWITCHER LOGIC
+       ========================================================== */
+    function switchMobileTab(tab) {
+      document.querySelectorAll('.mobile-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-btn-${tab}`).classList.add('active');
+
+      const colBloch = document.getElementById('view-bloch');
+      const colCircuit = document.getElementById('view-circuit');
+      const colTelemetry = document.getElementById('view-telemetry');
+
+      colBloch.classList.remove('mobile-active');
+      colCircuit.classList.remove('mobile-active');
+      colTelemetry.classList.remove('mobile-active');
+
+      if (tab === 'bloch') {
+        colBloch.classList.add('mobile-active');
+        // Force resize Three.js canvas on mobile tab show
+        setTimeout(handleBlochResize, 50);
+      } else if (tab === 'circuit') {
+        colCircuit.classList.add('mobile-active');
+      } else if (tab === 'telemetry') {
+        colTelemetry.classList.add('mobile-active');
+      }
+    }
+
+    /* ==========================================================
        AUDIO SYNTHESIZER (Web Audio API)
-       Harmonic Quantum Resonance & Gate Chimes
        ========================================================== */
     class QuantumAudioEngine {
       constructor() {
@@ -878,8 +1044,7 @@
       transparent: true,
       opacity: 0.25,
       roughness: 0.1,
-      metalness: 0.8,
-      wireframe: false
+      metalness: 0.8
     });
     const blochSphere = new THREE.Mesh(sphereGeo, sphereMat);
     bScene.add(blochSphere);
@@ -898,7 +1063,7 @@
     const merRing = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.008, 16, 100), ringMat);
     bScene.add(merRing);
 
-    // Coordinate Axes (X: Red, Y: Green, Z: Blue/Cyan)
+    // Coordinate Axes
     function createAxis(from, to, color) {
       const dir = new THREE.Vector3().subVectors(to, from).normalize();
       const length = from.distanceTo(to);
@@ -910,7 +1075,7 @@
     createAxis(new THREE.Vector3(0, -1.6, 0), new THREE.Vector3(0, 1.6, 0), 0x00f0ff); // Z (|0> / |1>)
     createAxis(new THREE.Vector3(0, 0, -1.6), new THREE.Vector3(0, 0, 1.6), 0x10b981); // Y
 
-    // State Vector Arrow (Origin -> Point on Sphere)
+    // State Vector Arrow
     let stateVectorArrow = new THREE.ArrowHelper(
       new THREE.Vector3(0, 1, 0),
       new THREE.Vector3(0, 0, 0),
@@ -921,7 +1086,6 @@
     );
     bScene.add(stateVectorArrow);
 
-    // State Tip Sphere
     const tipMesh = new THREE.Mesh(
       new THREE.SphereGeometry(0.06, 16, 16),
       new THREE.MeshBasicMaterial({ color: 0xffea00 })
@@ -929,10 +1093,8 @@
     bScene.add(tipMesh);
 
     function updateBlochSphere(theta, phi) {
-      // theta: polar angle from Z (|0>)
-      // phi: azimuthal angle in XY plane
       const x = Math.sin(theta) * Math.cos(phi);
-      const y = Math.cos(theta); // Three.js Y is up (corresponds to quantum Z)
+      const y = Math.cos(theta);
       const z = Math.sin(theta) * Math.sin(phi);
 
       const dir = new THREE.Vector3(x, y, z).normalize();
@@ -946,6 +1108,15 @@
       document.getElementById('bloch-phi').textContent = (phi * 180 / Math.PI).toFixed(1) + '°';
     }
 
+    function handleBlochResize() {
+      if (!blochContainer) return;
+      const width = blochContainer.clientWidth || window.innerWidth;
+      const height = blochContainer.clientHeight || 300;
+      bCamera.aspect = width / height;
+      bCamera.updateProjectionMatrix();
+      bRenderer.setSize(width, height);
+    }
+
     /* ==========================================================
        QUANTUM CIRCUIT & STATE VECTOR ENGINE
        ========================================================== */
@@ -954,7 +1125,6 @@
     let selectedTool = 'H';
     let selectedQubitIdx = 0;
 
-    // 2D Array: circuitGrid[qubit][step]
     let circuitGrid = Array(NUM_QUBITS).fill(null).map(() => Array(NUM_STEPS).fill(null));
 
     function selectTool(gate) {
@@ -973,7 +1143,6 @@
       computeQuantumState();
     }
 
-    // Complex Number Math Helper
     class Complex {
       constructor(r = 0, i = 0) {
         this.r = r;
@@ -992,7 +1161,6 @@
       phase() { return Math.atan2(this.i, this.r); }
     }
 
-    // Single Qubit Gate Unitaries
     const SQRT1_2 = Math.SQRT1_2;
     const GATES = {
       H: [
@@ -1022,18 +1190,15 @@
     };
 
     function computeQuantumState() {
-      const DIM = 16; // 2^4
-      // Initialize to |0000>
+      const DIM = 16;
       let state = Array(DIM).fill(null).map((_, i) => i === 0 ? new Complex(1, 0) : new Complex(0, 0));
 
-      // Step-by-step circuit execution
       for (let step = 0; step < NUM_STEPS; step++) {
         for (let q = 0; q < NUM_QUBITS; q++) {
           const gate = circuitGrid[q][step];
           if (!gate) continue;
 
           if (GATES[gate]) {
-            // Apply single-qubit gate to qubit q
             const u = GATES[gate];
             const nextState = Array(DIM).fill(null).map(() => new Complex(0, 0));
             const bitMask = 1 << (NUM_QUBITS - 1 - q);
@@ -1055,7 +1220,6 @@
             }
             state = nextState;
           } else if (gate === 'CX') {
-            // CNOT: control is qubit q, target is (q+1)%NUM_QUBITS
             const targetQ = (q + 1) % NUM_QUBITS;
             const ctrlMask = 1 << (NUM_QUBITS - 1 - q);
             const targetMask = 1 << (NUM_QUBITS - 1 - targetQ);
@@ -1063,7 +1227,6 @@
             const nextState = Array(DIM).fill(null).map(() => new Complex(0, 0));
             for (let i = 0; i < DIM; i++) {
               if (i & ctrlMask) {
-                // Control is 1, flip target bit
                 const flipped = i ^ targetMask;
                 nextState[i] = state[flipped];
               } else {
@@ -1079,7 +1242,6 @@
     }
 
     function updateUIWithState(state) {
-      // 1. Dirac Notation String
       let diracParts = [];
       state.forEach((c, idx) => {
         const p = c.mag2();
@@ -1091,13 +1253,11 @@
       });
       document.getElementById('dirac-display').textContent = diracParts.length > 0 ? `|Ψ⟩ = ${diracParts.join(' + ')}` : '|Ψ⟩ = |0000⟩';
 
-      // 2. Entanglement Detection
-      // Check if state is entangled by checking if multiple non-zero amplitudes share correlations
       let nonZeroCount = state.filter(c => c.mag2() > 0.05).length;
       const isEntangled = nonZeroCount > 1 && (
-        (state[0].mag2() > 0.3 && state[15].mag2() > 0.3) || // |0000> + |1111>
-        (state[0].mag2() > 0.3 && state[3].mag2() > 0.3) ||   // |00> + |11>
-        (state[0].mag2() > 0.3 && state[7].mag2() > 0.3)     // GHZ
+        (state[0].mag2() > 0.3 && state[15].mag2() > 0.3) ||
+        (state[0].mag2() > 0.3 && state[3].mag2() > 0.3) ||
+        (state[0].mag2() > 0.3 && state[7].mag2() > 0.3)
       );
 
       const entBadge = document.getElementById('entanglement-badge');
@@ -1114,13 +1274,12 @@
         entText.textContent = 'SEPARABLE QUANTUM STATE';
       }
 
-      // 3. Probability Amplitude Bars
       const barsContainer = document.getElementById('state-bars-container');
       barsContainer.innerHTML = '';
       state.forEach((c, idx) => {
         const prob = c.mag2();
         const bitStr = idx.toString(2).padStart(NUM_QUBITS, '0');
-        const phase = c.phase(); // -PI to +PI
+        const phase = c.phase();
         const hue = ((phase + Math.PI) / (Math.PI * 2)) * 360;
 
         const row = document.createElement('div');
@@ -1135,8 +1294,6 @@
         barsContainer.appendChild(row);
       });
 
-      // 4. Update Bloch Sphere for Selected Qubit
-      // Reduced density matrix for single qubit
       let p0 = 0, p1 = 0;
       const mask = 1 << (NUM_QUBITS - 1 - selectedQubitIdx);
       state.forEach((c, i) => {
@@ -1144,7 +1301,6 @@
         else p0 += c.mag2();
       });
 
-      // Approximate theta and phi
       const theta = 2 * Math.acos(Math.min(1, Math.max(0, Math.sqrt(p0))));
       let phi = 0;
       if (p0 > 0.01 && p1 > 0.01) {
@@ -1152,21 +1308,16 @@
       }
       updateBlochSphere(theta, phi);
 
-      // 5. Update Measurement Histogram
       runShots(1024, false);
     }
 
     function runShots(shots = 1024, notify = true) {
       const DIM = 16;
       let counts = Array(DIM).fill(0);
-      const state = Array(DIM).fill(null).map((_, i) => i === 0 ? new Complex(1, 0) : new Complex(0, 0));
 
-      // Re-run state
       computeQuantumState();
-      // Read current probability bars
       const probs = Array.from(document.querySelectorAll('.state-prob')).map(el => parseFloat(el.textContent) / 100);
 
-      // Cumulative Distribution
       const cdf = [];
       let acc = 0;
       probs.forEach(p => {
@@ -1180,13 +1331,12 @@
         if (outcome !== -1) counts[outcome]++;
       }
 
-      // Render Histogram
       const histBox = document.getElementById('histogram-box');
       histBox.innerHTML = '';
       const maxCount = Math.max(...counts, 1);
 
       counts.forEach((cnt, idx) => {
-        if (cnt === 0 && probs[idx] === 0) return; // Hide zero bars to keep clean
+        if (cnt === 0 && probs[idx] === 0) return;
         const bitStr = idx.toString(2).padStart(NUM_QUBITS, '0');
         const heightPct = (cnt / maxCount) * 85;
 
@@ -1249,7 +1399,7 @@
 
     function onSlotClick(q, s) {
       if (circuitGrid[q][s]) {
-        circuitGrid[q][s] = null; // Clear if already filled
+        circuitGrid[q][s] = null;
       } else {
         circuitGrid[q][s] = selectedTool;
         qAudio.playGateChime(selectedTool);
@@ -1272,20 +1422,17 @@
       resetCircuit();
 
       if (name === 'bell') {
-        // H(q0), CX(q0, q1)
         circuitGrid[0][0] = 'H';
         circuitGrid[0][1] = 'CX';
         showToast('Preset: Bell State (|00> + |11>)/√2');
         qAudio.playEntanglementChime();
       } else if (name === 'ghz') {
-        // H(q0), CX(q0, q1), CX(q1, q2)
         circuitGrid[0][0] = 'H';
         circuitGrid[0][1] = 'CX';
         circuitGrid[1][2] = 'CX';
         showToast('Preset: 3-Qubit GHZ State (|000> + |111>)/√2');
         qAudio.playEntanglementChime();
       } else if (name === 'teleport') {
-        // EPR pair on q1, q2 -> Bell Measurement on q0, q1
         circuitGrid[1][0] = 'H';
         circuitGrid[1][1] = 'CX';
         circuitGrid[0][2] = 'CX';
@@ -1294,7 +1441,6 @@
         circuitGrid[1][4] = 'M';
         showToast('Preset: Quantum Teleportation Protocol');
       } else if (name === 'grover') {
-        // Superposition + Oracle + Diffusion
         circuitGrid[0][0] = 'H';
         circuitGrid[1][0] = 'H';
         circuitGrid[0][1] = 'Z';
@@ -1348,13 +1494,8 @@
       bRenderer.render(bScene, bCamera);
     }
 
-    window.addEventListener('resize', () => {
-      bCamera.aspect = blochContainer.clientWidth / blochContainer.clientHeight;
-      bCamera.updateProjectionMatrix();
-      bRenderer.setSize(blochContainer.clientWidth, blochContainer.clientHeight);
-    });
+    window.addEventListener('resize', handleBlochResize);
 
-    // Initialize Circuit & Bloch Sphere
     renderCircuitBoard();
     loadPreset('bell');
     animate();
