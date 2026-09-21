@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApexQuantum | Interactive Quantum Computing Circuit & 3D Bloch Sphere Simulator</title>
+  <meta name="description" content="Next-Generation Interactive Quantum Computer and Circuit Simulator featuring a 3D WebGL Bloch Sphere, 4-qubit circuit composer, real-time complex state vector engine, quantum entanglement detection, and Monte Carlo measurement sampling.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Outfit:wght@300;400;600;700;900&family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #06080f;
+      --panel-bg: rgba(11, 15, 25, 0.88);
+      --panel-border: rgba(0, 240, 255, 0.22);
+      --panel-border-glow: rgba(0, 240, 255, 0.45);
+      --cyan: #00f0ff;
+      --cyan-dim: rgba(0, 240, 255, 0.12);
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --purple: #a855f7;
+      --rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-ui: 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation / Header */
+    .app-header {
+      height: 60px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 50;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #a855f7 0%, #00f0ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #050811;
+      font-weight: 900;
+      font-size: 22px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn-action {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: rgba(0, 240, 255, 0.12);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      transform: translateY(-1px);
+    }
+
+    .btn-action.active {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      color: #050811;
+      font-weight: 800;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    }
+
+    /* Main Workspace Layout */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr 380px;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
+    /* Left Column: Bloch Sphere 3D View */
+    .col-bloch {
+      background: rgba(8, 12, 20, 0.95);
+      border-right: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .bloch-canvas-container {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    #bloch-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .bloch-hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bloch-pill {
+      align-self: flex-start;
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--panel-border);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--cyan);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .qubit-selector-bar {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 6px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-qselect {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 6px 0;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .btn-qselect:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-qselect.active {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* Center Column: Quantum Circuit Board & Presets */
+    .col-circuit {
+      display: flex;
+      flex-direction: column;
+      background: #080c14;
+      border-right: 1px solid var(--panel-border);
+      overflow-y: auto;
+    }
+
+    .circuit-toolbar {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(11, 15, 25, 0.5);
+    }
+
+    .gate-toolbox {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .gate-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 14px;
+      cursor: grab;
+      transition: all 0.2s;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .gate-badge:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 240, 255, 0.3);
+    }
+
+    .gate-badge.selected {
+      outline: 2px solid #fff;
+      transform: scale(1.08);
+    }
+
+    .gate-h { background: #00f0ff; color: #050811; }
+    .gate-x { background: #f43f5e; color: #fff; }
+    .gate-y { background: #10b981; color: #050811; }
+    .gate-z { background: #a855f7; color: #fff; }
+    .gate-s { background: #3b82f6; color: #fff; }
+    .gate-t { background: #6366f1; color: #fff; }
+    .gate-cx { background: #f59e0b; color: #050811; }
+    .gate-m { background: #64748b; color: #fff; }
+
+    /* Circuit Board Wire Area */
+    .circuit-board {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .qubit-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+    }
+
+    .qubit-label {
+      width: 60px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .qubit-wire {
+      flex: 1;
+      height: 48px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wire-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.15);
+      z-index: 1;
+    }
+
+    .wire-slot {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      background: rgba(11, 15, 25, 0.6);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .wire-slot:hover {
+      border-color: var(--cyan);
+      background: rgba(0, 240, 255, 0.08);
+    }
+
+    .wire-slot.filled {
+      border-style: solid;
+    }
+
+    /* Algorithm Presets Section */
+    .presets-container {
+      padding: 16px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(11, 15, 25, 0.4);
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .btn-preset {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .btn-preset:hover {
+      background: rgba(0, 240, 255, 0.08);
+      border-color: var(--cyan);
+      transform: translateY(-1px);
+    }
+
+    .preset-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .preset-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Right Column: State Vector, Entanglement & Measurement */
+    .col-telemetry {
+      background: rgba(8, 12, 20, 0.95);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .state-bra-ket {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    /* Probability Amplitude Bars */
+    .state-bars-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .state-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .state-key {
+      width: 48px;
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s;
+    }
+
+    .state-prob {
+      width: 44px;
+      text-align: right;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* Entanglement Status Pill */
+    .entanglement-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      margin-top: 4px;
+    }
+
+    /* Measurement Histogram */
+    .histogram-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 100px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .hist-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .hist-bar {
+      width: 100%;
+      background: linear-gradient(to top, #00f0ff, #a855f7);
+      border-radius: 4px 4px 0 0;
+      transition: height 0.4s ease;
+      min-height: 2px;
+    }
+
+    .hist-lbl {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    /* Toast Notification */
+    .toast-banner {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 240, 255, 0.2);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--cyan);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+    }
+
+    .toast-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(6px);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .workspace-grid {
+        grid-template-columns: 320px 1fr 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">Ψ</div>
+      <div>
+        <div class="brand-title">
+          ApexQuantum
+          <span class="brand-badge">Circuit & 3D Bloch Simulator</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-action active" id="btn-audio" onclick="toggleAudio()">
+        <i data-lucide="volume-2" id="audio-icon"></i>
+        <span>QUANTUM AUDIO</span>
+      </button>
+
+      <button class="btn-action" onclick="resetCircuit()">
+        <i data-lucide="rotate-ccw"></i>
+        <span>CLEAR CIRCUIT</span>
+      </button>
+
+      <a href="https://github.com/Tareq0001/ApexQuantum-Interactive-Quantum-Computing-Simulator" target="_blank" class="btn-action" style="text-decoration: none;">
+        <i data-lucide="github"></i>
+        <span>SOURCE</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Workspace Grid -->
+  <main class="workspace-grid">
+
+    <!-- Column 1: 3D Bloch Sphere -->
+    <section class="col-bloch">
+      <div class="bloch-canvas-container">
+        <div id="bloch-canvas"></div>
+        <div class="bloch-hud">
+          <div class="bloch-pill">
+            <i data-lucide="orbit"></i>
+            <span id="bloch-qubit-lbl">Bloch Sphere: |ψ₀⟩</span>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px; align-self: flex-start;">
+            θ: <span id="bloch-theta" style="color: #fff;">0.00°</span> | φ: <span id="bloch-phi" style="color: #fff;">0.00°</span>
+          </div>
+        </div>
+
+        <div class="qubit-selector-bar">
+          <button class="btn-qselect active" onclick="selectQubit(0)">q₀</button>
+          <button class="btn-qselect" onclick="selectQubit(1)">q₁</button>
+          <button class="btn-qselect" onclick="selectQubit(2)">q₂</button>
+          <button class="btn-qselect" onclick="selectQubit(3)">q₃</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 2: Quantum Circuit Composer -->
+    <section class="col-circuit">
+      <!-- Gate Selection Toolbar -->
+      <div class="circuit-toolbar">
+        <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+          SELECT GATE & CLICK WIRE:
+        </div>
+        <div class="gate-toolbox">
+          <div class="gate-badge gate-h selected" onclick="selectTool('H')" title="Hadamard (Superposition)">H</div>
+          <div class="gate-badge gate-x" onclick="selectTool('X')" title="Pauli-X (NOT / Bit Flip)">X</div>
+          <div class="gate-badge gate-y" onclick="selectTool('Y')" title="Pauli-Y">Y</div>
+          <div class="gate-badge gate-z" onclick="selectTool('Z')" title="Pauli-Z (Phase Flip)">Z</div>
+          <div class="gate-badge gate-s" onclick="selectTool('S')" title="Phase S (π/2)">S</div>
+          <div class="gate-badge gate-t" onclick="selectTool('T')" title="Phase T (π/4)">T</div>
+          <div class="gate-badge gate-cx" onclick="selectTool('CX')" title="Controlled-NOT (Entanglement)">CX</div>
+          <div class="gate-badge gate-m" onclick="selectTool('M')" title="Measurement">M</div>
+        </div>
+      </div>
+
+      <!-- 4-Qubit Wires -->
+      <div class="circuit-board" id="circuit-board">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Presets & Algorithms -->
+      <div class="presets-container">
+        <div class="section-title">
+          <i data-lucide="sparkles"></i> Quantum Algorithms & Presets
+        </div>
+        <div class="presets-grid">
+          <button class="btn-preset" onclick="loadPreset('bell')">
+            <div class="preset-title">Bell State (|Φ⁺⟩)</div>
+            <div class="preset-desc">Maximal 2-Qubit Entanglement</div>
+          </button>
+          <button class="btn-preset" onclick="loadPreset('ghz')">
+            <div class="preset-title">GHZ State (3-Qubit)</div>
+            <div class="preset-desc">Tripartite Entanglement</div>
+          </button>
+          <button class="btn-preset" onclick="loadPreset('teleport')">
+            <div class="preset-title">Quantum Teleportation</div>
+            <div class="preset-desc">State Transfer Protocol</div>
+          </button>
+          <button class="btn-preset" onclick="loadPreset('grover')">
+            <div class="preset-title">Grover Search Step</div>
+            <div class="preset-desc">Amplitude Amplification</div>
+          </button>
+          <button class="btn-preset" onclick="loadPreset('superdense')">
+            <div class="preset-title">Superdense Coding</div>
+            <div class="preset-desc">2 Classical Bits via 1 Qubit</div>
+          </button>
+          <button class="btn-preset" onclick="loadPreset('qrng')">
+            <div class="preset-title">QRNG Random Gen</div>
+            <div class="preset-desc">True Quantum Entropy</div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 3: State Vector Telemetry & Measurement -->
+    <aside class="col-telemetry">
+      <!-- Dirac State Vector -->
+      <div class="card">
+        <div class="section-title">
+          <i data-lucide="binary"></i> State Vector |Ψ⟩
+        </div>
+        <div class="state-bra-ket" id="dirac-display">
+          |Ψ⟩ = 1.000|0000⟩
+        </div>
+        <div class="entanglement-pill" id="entanglement-badge">
+          <i data-lucide="link"></i>
+          <span id="entanglement-text">SEPARABLE STATE (NO ENTANGLEMENT)</span>
+        </div>
+      </div>
+
+      <!-- Probability Amplitudes Spectrum -->
+      <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="section-title">
+          <i data-lucide="bar-chart-2"></i> Probability Spectrum (|cₖ|²)
+        </div>
+        <div class="state-bars-list" id="state-bars-container">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Shot Sampling / Measurement -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="section-title" style="margin-bottom: 0;">
+            <i data-lucide="dice-5"></i> 1024-Shot Measurement
+          </div>
+          <button class="btn-action" onclick="runShots(1024)" style="padding: 4px 10px; font-size: 11px;">
+            <i data-lucide="play"></i> SAMPLE
+          </button>
+        </div>
+
+        <div class="histogram-box" id="histogram-box">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div class="toast-banner" id="toast-banner">
+    <i data-lucide="check-circle-2"></i>
+    <span id="toast-text">Bell State Circuit Loaded</span>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    /* ==========================================================
+       AUDIO SYNTHESIZER (Web Audio API)
+       Harmonic Quantum Resonance & Gate Chimes
+       ========================================================== */
+    class QuantumAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (this.ctx) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+      }
+
+      playGateChime(gate) {
+        if (!this.enabled) return;
+        this.init();
+
+        const freqs = {
+          H: 523.25, // C5
+          X: 659.25, // E5
+          Y: 783.99, // G5
+          Z: 880.00, // A5
+          S: 987.77, // B5
+          T: 1046.50, // C6
+          CX: 440.00, // A4
+          M: 349.23  // F4
+        };
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freqs[gate] || 500, now);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+
+      playEntanglementChime() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.08, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.5);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.6);
+        });
+      }
+    }
+
+    const qAudio = new QuantumAudioEngine();
+
+    function toggleAudio() {
+      qAudio.enabled = !qAudio.enabled;
+      const btn = document.getElementById('btn-audio');
+      const icon = document.getElementById('audio-icon');
+      if (qAudio.enabled) {
+        btn.classList.add('active');
+        icon.setAttribute('data-lucide', 'volume-2');
+        showToast('Quantum Audio: ACTIVE');
+      } else {
+        btn.classList.remove('active');
+        icon.setAttribute('data-lucide', 'volume-x');
+        showToast('Quantum Audio: MUTED');
+      }
+      lucide.createIcons();
+    }
+
+    /* ==========================================================
+       3D BLOCH SPHERE (Three.js WebGL)
+       ========================================================== */
+    const blochContainer = document.getElementById('bloch-canvas');
+    const bScene = new THREE.Scene();
+    bScene.background = new THREE.Color(0x06080f);
+
+    const bCamera = new THREE.PerspectiveCamera(45, blochContainer.clientWidth / blochContainer.clientHeight, 0.1, 100);
+    bCamera.position.set(2.8, 2.2, 3.4);
+
+    const bRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    bRenderer.setSize(blochContainer.clientWidth, blochContainer.clientHeight);
+    bRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    blochContainer.appendChild(bRenderer.domElement);
+
+    const bControls = new THREE.OrbitControls(bCamera, bRenderer.domElement);
+    bControls.enableDamping = true;
+    bControls.dampingFactor = 0.05;
+    bControls.minDistance = 2.0;
+    bControls.maxDistance = 8.0;
+
+    // Lighting
+    const bAmbient = new THREE.AmbientLight(0xffffff, 0.8);
+    bScene.add(bAmbient);
+    const bLight = new THREE.PointLight(0x00f0ff, 2, 20);
+    bLight.position.set(5, 5, 5);
+    bScene.add(bLight);
+
+    // 1. Transparent Glass Sphere
+    const sphereGeo = new THREE.SphereGeometry(1.2, 36, 36);
+    const sphereMat = new THREE.MeshStandardMaterial({
+      color: 0x0a1c38,
+      transparent: true,
+      opacity: 0.25,
+      roughness: 0.1,
+      metalness: 0.8,
+      wireframe: false
+    });
+    const blochSphere = new THREE.Mesh(sphereGeo, sphereMat);
+    bScene.add(blochSphere);
+
+    // Wireframe Cage
+    const wireGeo = new THREE.SphereGeometry(1.2, 18, 18);
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.12 });
+    bScene.add(new THREE.Mesh(wireGeo, wireMat));
+
+    // Equator and Meridian Rings
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.4 });
+    const eqRing = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.008, 16, 100), ringMat);
+    eqRing.rotation.x = Math.PI / 2;
+    bScene.add(eqRing);
+
+    const merRing = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.008, 16, 100), ringMat);
+    bScene.add(merRing);
+
+    // Coordinate Axes (X: Red, Y: Green, Z: Blue/Cyan)
+    function createAxis(from, to, color) {
+      const dir = new THREE.Vector3().subVectors(to, from).normalize();
+      const length = from.distanceTo(to);
+      const arrow = new THREE.ArrowHelper(dir, from, length, color, 0.12, 0.08);
+      bScene.add(arrow);
+    }
+
+    createAxis(new THREE.Vector3(-1.6, 0, 0), new THREE.Vector3(1.6, 0, 0), 0xf43f5e); // X
+    createAxis(new THREE.Vector3(0, -1.6, 0), new THREE.Vector3(0, 1.6, 0), 0x00f0ff); // Z (|0> / |1>)
+    createAxis(new THREE.Vector3(0, 0, -1.6), new THREE.Vector3(0, 0, 1.6), 0x10b981); // Y
+
+    // State Vector Arrow (Origin -> Point on Sphere)
+    let stateVectorArrow = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(0, 0, 0),
+      1.2,
+      0xffea00,
+      0.18,
+      0.12
+    );
+    bScene.add(stateVectorArrow);
+
+    // State Tip Sphere
+    const tipMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffea00 })
+    );
+    bScene.add(tipMesh);
+
+    function updateBlochSphere(theta, phi) {
+      // theta: polar angle from Z (|0>)
+      // phi: azimuthal angle in XY plane
+      const x = Math.sin(theta) * Math.cos(phi);
+      const y = Math.cos(theta); // Three.js Y is up (corresponds to quantum Z)
+      const z = Math.sin(theta) * Math.sin(phi);
+
+      const dir = new THREE.Vector3(x, y, z).normalize();
+      bScene.remove(stateVectorArrow);
+      stateVectorArrow = new THREE.ArrowHelper(dir, new THREE.Vector3(0, 0, 0), 1.2, 0xffea00, 0.18, 0.12);
+      bScene.add(stateVectorArrow);
+
+      tipMesh.position.set(x * 1.2, y * 1.2, z * 1.2);
+
+      document.getElementById('bloch-theta').textContent = (theta * 180 / Math.PI).toFixed(1) + '°';
+      document.getElementById('bloch-phi').textContent = (phi * 180 / Math.PI).toFixed(1) + '°';
+    }
+
+    /* ==========================================================
+       QUANTUM CIRCUIT & STATE VECTOR ENGINE
+       ========================================================== */
+    const NUM_QUBITS = 4;
+    const NUM_STEPS = 8;
+    let selectedTool = 'H';
+    let selectedQubitIdx = 0;
+
+    // 2D Array: circuitGrid[qubit][step]
+    let circuitGrid = Array(NUM_QUBITS).fill(null).map(() => Array(NUM_STEPS).fill(null));
+
+    function selectTool(gate) {
+      selectedTool = gate;
+      document.querySelectorAll('.gate-badge').forEach(b => {
+        b.classList.toggle('selected', b.textContent === gate);
+      });
+    }
+
+    function selectQubit(idx) {
+      selectedQubitIdx = idx;
+      document.querySelectorAll('.btn-qselect').forEach((b, i) => {
+        b.classList.toggle('active', i === idx);
+      });
+      document.getElementById('bloch-qubit-lbl').textContent = `Bloch Sphere: |ψ${idx}⟩`;
+      computeQuantumState();
+    }
+
+    // Complex Number Math Helper
+    class Complex {
+      constructor(r = 0, i = 0) {
+        this.r = r;
+        this.i = i;
+      }
+      add(c) { return new Complex(this.r + c.r, this.i + c.i); }
+      sub(c) { return new Complex(this.r - c.r, this.i - c.i); }
+      mul(c) {
+        return new Complex(
+          this.r * c.r - this.i * c.i,
+          this.r * c.i + this.i * c.r
+        );
+      }
+      scale(s) { return new Complex(this.r * s, this.i * s); }
+      mag2() { return this.r * this.r + this.i * this.i; }
+      phase() { return Math.atan2(this.i, this.r); }
+    }
+
+    // Single Qubit Gate Unitaries
+    const SQRT1_2 = Math.SQRT1_2;
+    const GATES = {
+      H: [
+        [new Complex(SQRT1_2, 0), new Complex(SQRT1_2, 0)],
+        [new Complex(SQRT1_2, 0), new Complex(-SQRT1_2, 0)]
+      ],
+      X: [
+        [new Complex(0, 0), new Complex(1, 0)],
+        [new Complex(1, 0), new Complex(0, 0)]
+      ],
+      Y: [
+        [new Complex(0, 0), new Complex(0, -1)],
+        [new Complex(0, 1), new Complex(0, 0)]
+      ],
+      Z: [
+        [new Complex(1, 0), new Complex(0, 0)],
+        [new Complex(0, 0), new Complex(-1, 0)]
+      ],
+      S: [
+        [new Complex(1, 0), new Complex(0, 0)],
+        [new Complex(0, 0), new Complex(0, 1)]
+      ],
+      T: [
+        [new Complex(1, 0), new Complex(0, 0)],
+        [new Complex(0, 0), new Complex(SQRT1_2, SQRT1_2)]
+      ]
+    };
+
+    function computeQuantumState() {
+      const DIM = 16; // 2^4
+      // Initialize to |0000>
+      let state = Array(DIM).fill(null).map((_, i) => i === 0 ? new Complex(1, 0) : new Complex(0, 0));
+
+      // Step-by-step circuit execution
+      for (let step = 0; step < NUM_STEPS; step++) {
+        for (let q = 0; q < NUM_QUBITS; q++) {
+          const gate = circuitGrid[q][step];
+          if (!gate) continue;
+
+          if (GATES[gate]) {
+            // Apply single-qubit gate to qubit q
+            const u = GATES[gate];
+            const nextState = Array(DIM).fill(null).map(() => new Complex(0, 0));
+            const bitMask = 1 << (NUM_QUBITS - 1 - q);
+
+            for (let i = 0; i < DIM; i++) {
+              const bit = (i & bitMask) ? 1 : 0;
+              const i0 = i & ~bitMask;
+              const i1 = i | bitMask;
+
+              if (bit === 0) {
+                const term0 = u[0][0].mul(state[i0]);
+                const term1 = u[0][1].mul(state[i1]);
+                nextState[i] = term0.add(term1);
+              } else {
+                const term0 = u[1][0].mul(state[i0]);
+                const term1 = u[1][1].mul(state[i1]);
+                nextState[i] = term0.add(term1);
+              }
+            }
+            state = nextState;
+          } else if (gate === 'CX') {
+            // CNOT: control is qubit q, target is (q+1)%NUM_QUBITS
+            const targetQ = (q + 1) % NUM_QUBITS;
+            const ctrlMask = 1 << (NUM_QUBITS - 1 - q);
+            const targetMask = 1 << (NUM_QUBITS - 1 - targetQ);
+
+            const nextState = Array(DIM).fill(null).map(() => new Complex(0, 0));
+            for (let i = 0; i < DIM; i++) {
+              if (i & ctrlMask) {
+                // Control is 1, flip target bit
+                const flipped = i ^ targetMask;
+                nextState[i] = state[flipped];
+              } else {
+                nextState[i] = state[i];
+              }
+            }
+            state = nextState;
+          }
+        }
+      }
+
+      updateUIWithState(state);
+    }
+
+    function updateUIWithState(state) {
+      // 1. Dirac Notation String
+      let diracParts = [];
+      state.forEach((c, idx) => {
+        const p = c.mag2();
+        if (p > 0.001) {
+          const bitStr = idx.toString(2).padStart(NUM_QUBITS, '0');
+          const amp = Math.sqrt(p).toFixed(3);
+          diracParts.push(`${amp}|${bitStr}⟩`);
+        }
+      });
+      document.getElementById('dirac-display').textContent = diracParts.length > 0 ? `|Ψ⟩ = ${diracParts.join(' + ')}` : '|Ψ⟩ = |0000⟩';
+
+      // 2. Entanglement Detection
+      // Check if state is entangled by checking if multiple non-zero amplitudes share correlations
+      let nonZeroCount = state.filter(c => c.mag2() > 0.05).length;
+      const isEntangled = nonZeroCount > 1 && (
+        (state[0].mag2() > 0.3 && state[15].mag2() > 0.3) || // |0000> + |1111>
+        (state[0].mag2() > 0.3 && state[3].mag2() > 0.3) ||   // |00> + |11>
+        (state[0].mag2() > 0.3 && state[7].mag2() > 0.3)     // GHZ
+      );
+
+      const entBadge = document.getElementById('entanglement-badge');
+      const entText = document.getElementById('entanglement-text');
+      if (isEntangled) {
+        entBadge.style.background = 'rgba(168, 85, 247, 0.25)';
+        entBadge.style.borderColor = 'var(--purple)';
+        entBadge.style.color = '#e9d5ff';
+        entText.textContent = 'MAXIMAL ENTANGLEMENT DETECTED (BELL / GHZ)';
+      } else {
+        entBadge.style.background = 'rgba(16, 185, 129, 0.12)';
+        entBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        entBadge.style.color = 'var(--emerald)';
+        entText.textContent = 'SEPARABLE QUANTUM STATE';
+      }
+
+      // 3. Probability Amplitude Bars
+      const barsContainer = document.getElementById('state-bars-container');
+      barsContainer.innerHTML = '';
+      state.forEach((c, idx) => {
+        const prob = c.mag2();
+        const bitStr = idx.toString(2).padStart(NUM_QUBITS, '0');
+        const phase = c.phase(); // -PI to +PI
+        const hue = ((phase + Math.PI) / (Math.PI * 2)) * 360;
+
+        const row = document.createElement('div');
+        row.className = 'state-bar-row';
+        row.innerHTML = `
+          <div class="state-key">|${bitStr}⟩</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: ${(prob * 100).toFixed(1)}%; background: hsl(${hue}, 90%, 55%);"></div>
+          </div>
+          <div class="state-prob">${(prob * 100).toFixed(0)}%</div>
+        `;
+        barsContainer.appendChild(row);
+      });
+
+      // 4. Update Bloch Sphere for Selected Qubit
+      // Reduced density matrix for single qubit
+      let p0 = 0, p1 = 0;
+      const mask = 1 << (NUM_QUBITS - 1 - selectedQubitIdx);
+      state.forEach((c, i) => {
+        if (i & mask) p1 += c.mag2();
+        else p0 += c.mag2();
+      });
+
+      // Approximate theta and phi
+      const theta = 2 * Math.acos(Math.min(1, Math.max(0, Math.sqrt(p0))));
+      let phi = 0;
+      if (p0 > 0.01 && p1 > 0.01) {
+        phi = state.find(c => c.mag2() > 0.05)?.phase() || 0;
+      }
+      updateBlochSphere(theta, phi);
+
+      // 5. Update Measurement Histogram
+      runShots(1024, false);
+    }
+
+    function runShots(shots = 1024, notify = true) {
+      const DIM = 16;
+      let counts = Array(DIM).fill(0);
+      const state = Array(DIM).fill(null).map((_, i) => i === 0 ? new Complex(1, 0) : new Complex(0, 0));
+
+      // Re-run state
+      computeQuantumState();
+      // Read current probability bars
+      const probs = Array.from(document.querySelectorAll('.state-prob')).map(el => parseFloat(el.textContent) / 100);
+
+      // Cumulative Distribution
+      const cdf = [];
+      let acc = 0;
+      probs.forEach(p => {
+        acc += p;
+        cdf.push(acc);
+      });
+
+      for (let s = 0; s < shots; s++) {
+        const r = Math.random();
+        const outcome = cdf.findIndex(c => r <= c);
+        if (outcome !== -1) counts[outcome]++;
+      }
+
+      // Render Histogram
+      const histBox = document.getElementById('histogram-box');
+      histBox.innerHTML = '';
+      const maxCount = Math.max(...counts, 1);
+
+      counts.forEach((cnt, idx) => {
+        if (cnt === 0 && probs[idx] === 0) return; // Hide zero bars to keep clean
+        const bitStr = idx.toString(2).padStart(NUM_QUBITS, '0');
+        const heightPct = (cnt / maxCount) * 85;
+
+        const col = document.createElement('div');
+        col.className = 'hist-col';
+        col.innerHTML = `
+          <div class="hist-bar" style="height: ${heightPct}%;"></div>
+          <div class="hist-lbl">${bitStr}</div>
+        `;
+        histBox.appendChild(col);
+      });
+
+      if (notify) showToast(`Sampled ${shots} Shots via Quantum Collapse`);
+    }
+
+    /* ==========================================================
+       RENDER CIRCUIT BOARD WIRES & SLOTS
+       ========================================================== */
+    function renderCircuitBoard() {
+      const board = document.getElementById('circuit-board');
+      board.innerHTML = '';
+
+      for (let q = 0; q < NUM_QUBITS; q++) {
+        const row = document.createElement('div');
+        row.className = 'qubit-row';
+
+        const label = document.createElement('div');
+        label.className = 'qubit-label';
+        label.innerHTML = `|q${q}⟩ <span style="font-size: 11px; color: var(--text-muted);">&gt;</span>`;
+        row.appendChild(label);
+
+        const wire = document.createElement('div');
+        wire.className = 'qubit-wire';
+
+        const wireLine = document.createElement('div');
+        wireLine.className = 'wire-line';
+        wire.appendChild(wireLine);
+
+        for (let s = 0; s < NUM_STEPS; s++) {
+          const slot = document.createElement('div');
+          slot.className = 'wire-slot';
+          const gate = circuitGrid[q][s];
+
+          if (gate) {
+            slot.classList.add('filled');
+            const badge = document.createElement('div');
+            badge.className = `gate-badge gate-${gate.toLowerCase()}`;
+            badge.textContent = gate;
+            slot.appendChild(badge);
+          }
+
+          slot.onclick = () => onSlotClick(q, s);
+          wire.appendChild(slot);
+        }
+
+        row.appendChild(wire);
+        board.appendChild(row);
+      }
+    }
+
+    function onSlotClick(q, s) {
+      if (circuitGrid[q][s]) {
+        circuitGrid[q][s] = null; // Clear if already filled
+      } else {
+        circuitGrid[q][s] = selectedTool;
+        qAudio.playGateChime(selectedTool);
+      }
+      renderCircuitBoard();
+      computeQuantumState();
+    }
+
+    function resetCircuit() {
+      circuitGrid = Array(NUM_QUBITS).fill(null).map(() => Array(NUM_STEPS).fill(null));
+      renderCircuitBoard();
+      computeQuantumState();
+      showToast('Circuit Cleared to Ground State |0000⟩');
+    }
+
+    /* ==========================================================
+       PRESET QUANTUM ALGORITHMS
+       ========================================================== */
+    function loadPreset(name) {
+      resetCircuit();
+
+      if (name === 'bell') {
+        // H(q0), CX(q0, q1)
+        circuitGrid[0][0] = 'H';
+        circuitGrid[0][1] = 'CX';
+        showToast('Preset: Bell State (|00> + |11>)/√2');
+        qAudio.playEntanglementChime();
+      } else if (name === 'ghz') {
+        // H(q0), CX(q0, q1), CX(q1, q2)
+        circuitGrid[0][0] = 'H';
+        circuitGrid[0][1] = 'CX';
+        circuitGrid[1][2] = 'CX';
+        showToast('Preset: 3-Qubit GHZ State (|000> + |111>)/√2');
+        qAudio.playEntanglementChime();
+      } else if (name === 'teleport') {
+        // EPR pair on q1, q2 -> Bell Measurement on q0, q1
+        circuitGrid[1][0] = 'H';
+        circuitGrid[1][1] = 'CX';
+        circuitGrid[0][2] = 'CX';
+        circuitGrid[0][3] = 'H';
+        circuitGrid[0][4] = 'M';
+        circuitGrid[1][4] = 'M';
+        showToast('Preset: Quantum Teleportation Protocol');
+      } else if (name === 'grover') {
+        // Superposition + Oracle + Diffusion
+        circuitGrid[0][0] = 'H';
+        circuitGrid[1][0] = 'H';
+        circuitGrid[0][1] = 'Z';
+        circuitGrid[1][1] = 'Z';
+        circuitGrid[0][2] = 'H';
+        circuitGrid[1][2] = 'H';
+        circuitGrid[0][3] = 'X';
+        circuitGrid[1][3] = 'X';
+        showToast("Preset: Grover's Search Step");
+      } else if (name === 'superdense') {
+        circuitGrid[0][0] = 'H';
+        circuitGrid[0][1] = 'CX';
+        circuitGrid[0][2] = 'X';
+        circuitGrid[0][3] = 'Z';
+        circuitGrid[0][4] = 'CX';
+        circuitGrid[0][5] = 'H';
+        showToast('Preset: Superdense Coding Protocol');
+      } else if (name === 'qrng') {
+        circuitGrid[0][0] = 'H';
+        circuitGrid[1][0] = 'H';
+        circuitGrid[2][0] = 'H';
+        circuitGrid[3][0] = 'H';
+        circuitGrid[0][1] = 'M';
+        circuitGrid[1][1] = 'M';
+        circuitGrid[2][1] = 'M';
+        circuitGrid[3][1] = 'M';
+        showToast('Preset: 4-Qubit True Random Generator (QRNG)');
+      }
+
+      renderCircuitBoard();
+      computeQuantumState();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-banner');
+      const text = document.getElementById('toast-text');
+      text.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2800);
+    }
+
+    /* ==========================================================
+       ANIMATION LOOP & RESIZE
+       ========================================================== */
+    function animate() {
+      requestAnimationFrame(animate);
+      bControls.update();
+      bRenderer.render(bScene, bCamera);
+    }
+
+    window.addEventListener('resize', () => {
+      bCamera.aspect = blochContainer.clientWidth / blochContainer.clientHeight;
+      bCamera.updateProjectionMatrix();
+      bRenderer.setSize(blochContainer.clientWidth, blochContainer.clientHeight);
+    });
+
+    // Initialize Circuit & Bloch Sphere
+    renderCircuitBoard();
+    loadPreset('bell');
+    animate();
+  </script>
+</body>
+</html>
