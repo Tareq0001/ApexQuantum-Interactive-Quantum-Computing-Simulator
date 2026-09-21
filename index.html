@@ -1454,7 +1454,6 @@
       const DIM = 16;
       let counts = Array(DIM).fill(0);
 
-      computeQuantumState();
       const probs = Array.from(document.querySelectorAll('.state-prob')).map(el => parseFloat(el.textContent) / 100);
 
       const cdf = [];
