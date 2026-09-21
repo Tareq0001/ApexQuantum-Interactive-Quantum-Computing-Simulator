@@ -209,8 +209,8 @@
 
     /* Main Workspace Layout */
     .workspace-grid {
-      display: grid;
-      grid-template-columns: 350px 1fr 370px;
+      display: flex;
+      flex-direction: row;
       flex: 1;
       height: calc(100vh - 56px);
       overflow: hidden;
@@ -220,11 +220,118 @@
     /* Left Column: Bloch Sphere 3D View */
     .col-bloch {
       background: rgba(8, 12, 20, 0.95);
-      border-right: 1px solid var(--panel-border);
+      border-right: none;
+      width: 350px;
+      min-width: 200px;
+      max-width: 70vw;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       position: relative;
       height: 100%;
+      transition: width 0.05s ease;
+    }
+
+    /* Draggable Splitters (Resizers) */
+    .resizer-col {
+      width: 8px;
+      cursor: col-resize;
+      background: var(--panel-border);
+      position: relative;
+      flex-shrink: 0;
+      z-index: 25;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .resizer-col::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      top: 0;
+      bottom: 0;
+      left: -6px;
+      cursor: col-resize;
+      z-index: 1;
+    }
+
+    .resizer-col .resizer-handle {
+      width: 3px;
+      height: 42px;
+      background: var(--text-muted);
+      border-radius: 2px;
+      transition: all 0.15s ease;
+      z-index: 2;
+    }
+
+    .resizer-col:hover, .resizer-col.dragging {
+      background: var(--cyan);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
+    }
+
+    .resizer-col:hover .resizer-handle, .resizer-col.dragging .resizer-handle {
+      background: #ffffff;
+      height: 60px;
+    }
+
+    /* Panel Maximize Modes */
+    .workspace-grid.max-bloch .col-circuit,
+    .workspace-grid.max-bloch .col-telemetry,
+    .workspace-grid.max-bloch .resizer-col {
+      display: none !important;
+    }
+    .workspace-grid.max-bloch .col-bloch {
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 1 !important;
+    }
+
+    .workspace-grid.max-circuit .col-bloch,
+    .workspace-grid.max-circuit .col-telemetry,
+    .workspace-grid.max-circuit .resizer-col {
+      display: none !important;
+    }
+    .workspace-grid.max-circuit .col-circuit {
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 1 !important;
+    }
+
+    .workspace-grid.max-telemetry .col-bloch,
+    .workspace-grid.max-telemetry .col-circuit,
+    .workspace-grid.max-telemetry .resizer-col {
+      display: none !important;
+    }
+    .workspace-grid.max-telemetry .col-telemetry {
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 1 !important;
+    }
+
+    .btn-panel-toggle {
+      background: rgba(11, 15, 25, 0.75);
+      border: 1px solid var(--panel-border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 4px 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .btn-panel-toggle:hover {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      background: rgba(0, 240, 255, 0.1);
+    }
+    .btn-panel-toggle svg {
+      width: 13px;
+      height: 13px;
     }
 
     .bloch-canvas-container {
@@ -310,10 +417,12 @@
 
     /* Center Column: Quantum Circuit Board & Presets */
     .col-circuit {
+      flex: 1;
+      min-width: 320px;
       display: flex;
       flex-direction: column;
       background: #080c14;
-      border-right: 1px solid var(--panel-border);
+      border-right: none;
       overflow-y: auto;
       height: 100%;
     }
@@ -540,12 +649,17 @@
     /* Right Column: State Vector, Entanglement & Measurement */
     .col-telemetry {
       background: rgba(8, 12, 20, 0.95);
+      width: 370px;
+      min-width: 260px;
+      max-width: 60vw;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       gap: 14px;
       padding: 16px;
       overflow-y: auto;
       height: 100%;
+      transition: width 0.05s ease;
     }
 
     .card {
@@ -733,8 +847,13 @@
 
       .col-bloch, .col-circuit, .col-telemetry {
         display: none;
-        width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
         border-right: none;
+      }
+
+      .resizer-col {
+        display: none !important;
       }
 
       .col-bloch.mobile-active,
@@ -808,9 +927,14 @@
       <div class="bloch-canvas-container">
         <div id="bloch-canvas"></div>
         <div class="bloch-hud">
-          <div class="bloch-pill">
-            <i data-lucide="orbit"></i>
-            <span id="bloch-qubit-lbl">Bloch Sphere: |ψ₀⟩</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="bloch-pill">
+              <i data-lucide="orbit"></i>
+              <span id="bloch-qubit-lbl">Bloch Sphere: |ψ₀⟩</span>
+            </div>
+            <button class="btn-panel-toggle" onclick="toggleMaximize('bloch')" title="Maximize / Restore 3D Bloch View">
+              <i data-lucide="maximize-2" id="bloch-max-icon"></i>
+            </button>
           </div>
           <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; align-self: flex-start;">
             θ: <span id="bloch-theta" style="color: #fff;">0.00°</span> | φ: <span id="bloch-phi" style="color: #fff;">0.00°</span>
@@ -826,13 +950,23 @@
       </div>
     </section>
 
+    <!-- Draggable Resizer 1 (Bloch vs Circuit) -->
+    <div class="resizer-col" id="resizer-bloch" title="Drag to resize 3D Bloch panel (Double-click to reset)">
+      <div class="resizer-handle"></div>
+    </div>
+
     <!-- Column 2: Quantum Circuit Composer (Default Active on Mobile) -->
     <section class="col-circuit mobile-active" id="view-circuit">
       <!-- Gate Selection Toolbar -->
       <div class="circuit-toolbar">
         <div class="toolbar-header">
           <span>SELECT GATE & TAP WIRE:</span>
-          <span style="color: var(--cyan);">4 QUBITS • 8 STEPS</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--cyan);">4 QUBITS • 8 STEPS</span>
+            <button class="btn-panel-toggle" onclick="toggleMaximize('circuit')" title="Maximize / Restore Circuit View">
+              <i data-lucide="maximize-2" id="circuit-max-icon"></i>
+            </button>
+          </div>
         </div>
         <div class="gate-toolbox">
           <div class="gate-badge gate-h selected" onclick="selectTool('H')" title="Hadamard (Superposition)">H</div>
@@ -888,12 +1022,22 @@
       </div>
     </section>
 
+    <!-- Draggable Resizer 2 (Circuit vs Telemetry) -->
+    <div class="resizer-col" id="resizer-telemetry" title="Drag to resize Results panel (Double-click to reset)">
+      <div class="resizer-handle"></div>
+    </div>
+
     <!-- Column 3: State Vector Telemetry & Measurement -->
     <aside class="col-telemetry" id="view-telemetry">
       <!-- Dirac State Vector -->
       <div class="card">
-        <div class="section-title">
-          <i data-lucide="binary"></i> State Vector |Ψ⟩
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="section-title" style="margin-bottom: 0;">
+            <i data-lucide="binary"></i> State Vector |Ψ⟩
+          </div>
+          <button class="btn-panel-toggle" onclick="toggleMaximize('telemetry')" title="Maximize / Restore Results View">
+            <i data-lucide="maximize-2" id="telemetry-max-icon"></i>
+          </button>
         </div>
         <div class="state-bra-ket" id="dirac-display">
           |Ψ⟩ = 1.000|0000⟩
@@ -1627,6 +1771,134 @@
     }
 
     /* ==========================================================
+       DRAGGABLE RESIZABLE PANELS & FULLSCREEN MAXIMIZE
+       ========================================================== */
+    let maximizedPanel = null;
+
+    function toggleMaximize(panel) {
+      const grid = document.querySelector('.workspace-grid');
+      const blochIcon = document.getElementById('bloch-max-icon');
+      const circuitIcon = document.getElementById('circuit-max-icon');
+      const telemetryIcon = document.getElementById('telemetry-max-icon');
+
+      if (maximizedPanel === panel) {
+        // Restore
+        grid.classList.remove('max-bloch', 'max-circuit', 'max-telemetry');
+        maximizedPanel = null;
+        blochIcon?.setAttribute('data-lucide', 'maximize-2');
+        circuitIcon?.setAttribute('data-lucide', 'maximize-2');
+        telemetryIcon?.setAttribute('data-lucide', 'maximize-2');
+        showToast('Restored Panel View');
+      } else {
+        // Maximize
+        grid.classList.remove('max-bloch', 'max-circuit', 'max-telemetry');
+        grid.classList.add(`max-${panel}`);
+        maximizedPanel = panel;
+
+        blochIcon?.setAttribute('data-lucide', panel === 'bloch' ? 'minimize-2' : 'maximize-2');
+        circuitIcon?.setAttribute('data-lucide', panel === 'circuit' ? 'minimize-2' : 'maximize-2');
+        telemetryIcon?.setAttribute('data-lucide', panel === 'telemetry' ? 'minimize-2' : 'maximize-2');
+        showToast(`Maximized ${panel.toUpperCase()} View`);
+      }
+      lucide.createIcons();
+      setTimeout(handleBlochResize, 60);
+    }
+
+    function initPanelResizers() {
+      const blochCol = document.getElementById('view-bloch');
+      const telemetryCol = document.getElementById('view-telemetry');
+      const resizerBloch = document.getElementById('resizer-bloch');
+      const resizerTelemetry = document.getElementById('resizer-telemetry');
+
+      if (!resizerBloch || !resizerTelemetry) return;
+
+      // Load saved widths from localStorage
+      const savedBlochW = localStorage.getItem('apex_bloch_w');
+      const savedTelemetryW = localStorage.getItem('apex_telemetry_w');
+      if (savedBlochW && window.innerWidth > 900) {
+        blochCol.style.width = `${savedBlochW}px`;
+      }
+      if (savedTelemetryW && window.innerWidth > 900) {
+        telemetryCol.style.width = `${savedTelemetryW}px`;
+      }
+
+      let activeResizer = null;
+      let startX = 0;
+      let startW = 0;
+
+      // Resizer 1 (Bloch)
+      resizerBloch.addEventListener('pointerdown', (e) => {
+        if (window.innerWidth <= 900 || maximizedPanel) return;
+        activeResizer = 'bloch';
+        startX = e.clientX;
+        startW = blochCol.getBoundingClientRect().width;
+        resizerBloch.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        resizerBloch.setPointerCapture(e.pointerId);
+      });
+
+      // Resizer 2 (Telemetry)
+      resizerTelemetry.addEventListener('pointerdown', (e) => {
+        if (window.innerWidth <= 900 || maximizedPanel) return;
+        activeResizer = 'telemetry';
+        startX = e.clientX;
+        startW = telemetryCol.getBoundingClientRect().width;
+        resizerTelemetry.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        resizerTelemetry.setPointerCapture(e.pointerId);
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!activeResizer) return;
+
+        if (activeResizer === 'bloch') {
+          const delta = e.clientX - startX;
+          const newW = Math.max(180, Math.min(window.innerWidth * 0.70, startW + delta));
+          blochCol.style.width = `${newW}px`;
+          handleBlochResize();
+        } else if (activeResizer === 'telemetry') {
+          const delta = startX - e.clientX;
+          const newW = Math.max(240, Math.min(window.innerWidth * 0.60, startW + delta));
+          telemetryCol.style.width = `${newW}px`;
+        }
+      });
+
+      const stopDrag = () => {
+        if (!activeResizer) return;
+        if (activeResizer === 'bloch') {
+          resizerBloch.classList.remove('dragging');
+          localStorage.setItem('apex_bloch_w', Math.round(blochCol.getBoundingClientRect().width));
+        } else if (activeResizer === 'telemetry') {
+          resizerTelemetry.classList.remove('dragging');
+          localStorage.setItem('apex_telemetry_w', Math.round(telemetryCol.getBoundingClientRect().width));
+        }
+        activeResizer = null;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        handleBlochResize();
+      };
+
+      window.addEventListener('pointerup', stopDrag);
+      window.addEventListener('pointercancel', stopDrag);
+
+      // Double-click to reset widths
+      resizerBloch.addEventListener('dblclick', () => {
+        blochCol.style.width = '350px';
+        localStorage.removeItem('apex_bloch_w');
+        handleBlochResize();
+        showToast('Bloch Sphere Panel Reset');
+      });
+
+      resizerTelemetry.addEventListener('dblclick', () => {
+        telemetryCol.style.width = '370px';
+        localStorage.removeItem('apex_telemetry_w');
+        showToast('Telemetry Panel Reset');
+      });
+    }
+
+    /* ==========================================================
        ANIMATION LOOP & RESIZE
        ========================================================== */
     function animate() {
@@ -1639,6 +1911,7 @@
 
     renderCircuitBoard();
     loadPreset('bell');
+    initPanelResizers();
     animate();
   </script>
 </body>
